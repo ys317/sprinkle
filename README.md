@@ -1,32 +1,47 @@
-# React + TypeScript + Vite
+# Crumbtrail 🍪
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**Payment links, tip jars and a receipts dashboard on [Cookie Chain](https://www.cookiechain.wtf).**
+No backend, no accounts, no custody. Everything runs in the browser against the community RPC.
 
-Currently, two official plugins are available:
+Live: https://crumbtrail.vercel.app
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## What it does
 
-## React Compiler
+| Page | What happens on-chain |
+| --- | --- |
+| **Create link** (`/`) | Nothing yet. You pick recipient, token (COOK or any registry token), optional amount, label and message. The whole request is encoded in the URL, plus a QR code. Links never expire. |
+| **Pay** (`/pay?…`) | Payer connects [Nightly](https://nightly.app), sees their balance, and sends. For COOK that is a `SystemProgram.transfer`; for SPL / Token‑2022 it is an idempotent ATA create + `transferChecked`. Every payment carries a `crumbtrail:v1:<label>:<payer>` memo. The transaction is simulated first, signed by the wallet, broadcast by the page to `rpc.cookiescan.io`, and confirmed with live stage updates and an explorer link. |
+| **Received** (`/dashboard`) | Reads `getSignaturesForAddress` + `getParsedTransactions` for any address, extracts incoming COOK and token transfers, groups Crumbtrail payments by label, shows totals (USD via Cookiescan prices), a per‑day chart and a live‑updating table. Subscribes to account changes so new payments appear as they land. |
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Why sign-then-send instead of the wallet's `sendTransaction`
 
-## Expanding the Oxlint configuration
+The Wallet Standard adapter maps any RPC it does not recognise to `solana:mainnet` and asks the
+wallet to broadcast there. On a custom SVM network that is the wrong chain. Crumbtrail asks the
+wallet only to **sign**, then broadcasts the raw transaction itself to the Cookie Chain RPC, so the
+flow is deterministic no matter which network the wallet UI has selected.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Cookie Chain integrations
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+- RPC / WS: `https://rpc.cookiescan.io`, `wss://wss.cookiescan.io`
+- Token registry + prices: `https://api.cookiescan.io/api/tokens`, `/api/price/cook`
+- Programs used: System, SPL Token, Token‑2022, Associated Token Account, Memo, Compute Budget
+- Explorer links: https://cookiescan.io
+- Bridge hint for empty wallets: https://hyperlane.cookiescan.io
+
+## Run locally
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # static output in dist/
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Deploys as a static site. `vercel.json` rewrites all routes to `index.html`.
+
+## Stack
+
+Vite · React 19 · TypeScript · `@solana/web3.js` · `@solana/spl-token` · `@solana/wallet-adapter-*` · `qrcode`
+
+## License
+
+MIT
