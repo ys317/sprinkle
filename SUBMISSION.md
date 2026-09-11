@@ -6,7 +6,7 @@ Deadline: 2026-09-22 21:59 UTC
 ## Superteam Earn form answers
 
 - **GitHub repository:** https://github.com/ys317/sprinkle
-- **Live application URL:** https://sprinkle-cook.vercel.app
+- **Live application URL:** https://sprinkle-ten.vercel.app
 - **Relevant addresses:** No custom program deployed. The app composes genesis programs on Cookie Chain:
   System `11111111111111111111111111111111`, SPL Token `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`,
   Token-2022 `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`, ATA `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`,
@@ -19,7 +19,7 @@ Shipped Sprinkle 🍪 — payment links, tip jars and a receipts dashboard on @T
 
 No backend. No accounts. No custody. Just your Nightly wallet and the Cookie Chain RPC.
 
-👉 https://sprinkle-cook.vercel.app
+👉 https://sprinkle-ten.vercel.app
 🧵
 
 **2/**
@@ -48,4 +48,4 @@ Built for the Cookie Chain bounty on @SuperteamEarn.
 
 ## Telegram message
 
-Hey all — built Sprinkle for the cApp bounty: payment links + tip jars + receipts dashboard, fully client-side on Cookie Chain. Live at https://sprinkle-cook.vercel.app, thread here: <X THREAD URL>. Feedback welcome!
+Hey all — built Sprinkle for the cApp bounty: payment links + tip jars + receipts dashboard, fully client-side on Cookie Chain. Live at https://sprinkle-ten.vercel.app, thread here: <X THREAD URL>. Feedback welcome!

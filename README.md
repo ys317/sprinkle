@@ -3,7 +3,7 @@
 **Payment links, tip jars and a receipts dashboard on [Cookie Chain](https://www.cookiechain.wtf).**
 No backend, no accounts, no custody. Everything runs in the browser against the community RPC.
 
-Live: https://sprinkle-cook.vercel.app
+Live: https://sprinkle-ten.vercel.app
 
 ## What it does
 
