@@ -10,42 +10,63 @@ Deadline: 2026-09-22 21:59 UTC
 - **Relevant addresses:** No custom program deployed. The app composes genesis programs on Cookie Chain:
   System `11111111111111111111111111111111`, SPL Token `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`,
   Token-2022 `TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb`, ATA `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`,
-  Memo `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr`. Example payment tx: <PASTE SIGNATURE AFTER TEST PAYMENT>
+  Memo `MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr`, cookie_domains (.cook names, read-only) `H43Qtq4AMQ86y7yc3YtCKZJ2QMhhnCcHyZKeFeoQn7PA`.
+  Submission PR in the official registry: https://github.com/cookiechain/superteam-hackathon-submissions/pulls (ys317:sprinkle)
 
-## X thread (post from your account, then share in t.me/TheCookieNetChain)
+## X thread (each tweet ≤ 280 chars, verified)
 
-**1/**
-Shipped Sprinkle 🍪 — payment links, tip jars and a receipts dashboard on @TheCookieChain.
+**1/** (203 chars)
+```
+Shipped Sprinkle 🍪 payment links, tip jars and a receipts dashboard on @TheCookieChain.
 
-No backend. No accounts. No custody. Just your Nightly wallet and the Cookie Chain RPC.
+No backend. No accounts. No custody. Just your Nightly wallet + the Cookie Chain RPC.
 
-👉 https://sprinkle-ten.vercel.app
-🧵
+https://sprinkle-ten.vercel.app 🧵
+```
 
-**2/**
-How it works:
-1. Paste your address, pick COOK or any Cookie Chain token, set an amount (or leave it open as a tip jar), add a label.
-2. You get a link + QR. Everything lives in the URL, so it never expires and nothing is stored anywhere.
+**2/** (236 chars)
+```
+How it works: paste your address (or a .cook name), pick COOK or any token, set an amount or leave it open as a tip jar, add a label.
 
-**3/**
-The payer opens the link, connects Nightly, sees their balance and the USD estimate, and hits Pay.
+You get a link + QR. Everything lives in the URL, so it never expires and nothing is stored anywhere.
+```
 
-The tx is simulated first (readable errors instead of wallet rejections), signed in the wallet, broadcast to rpc.cookiescan.io, and confirmed with live stage updates + explorer link. Sub-second finality makes this feel instant.
+**3/** (259 chars)
+```
+Payer opens the link, connects Nightly, sees balance + USD estimate, hits Pay.
 
-**4/**
-Every payment writes a `sprinkle:v1:<label>` memo on-chain. The Received tab reads your history straight from the chain, groups payments by label, totals them in USD via Cookiescan prices, and charts them per day. Works for any address, no login.
+The tx is simulated first (readable errors), signed in the wallet, broadcast to rpc.cookiescan.io and confirmed with live stage updates + explorer link. Sub-second finality.
+```
 
-**5/**
-Under the hood: SystemProgram for COOK, idempotent ATA create + transferChecked for SPL / Token-2022, Memo program, Compute Budget. Token list + prices from api.cookiescan.io.
+**4/** (235 chars)
+```
+Every payment writes a sprinkle:v1:<label> memo on-chain.
 
-One gotcha for builders: wallet-standard maps unknown RPCs to solana:mainnet, so sign locally and broadcast yourself.
+The Received tab reads your history straight from the chain, groups payments by label, totals in USD via Cookiescan prices, charts per day. Any address or .cook name, no login.
+```
 
-**6/**
-No COOK yet? Bridge from Solana in seconds at hyperlane.cookiescan.io — the pay page links you there when your balance is empty.
+**5/** (213 chars)
+```
+Under the hood: SystemProgram for COOK, idempotent ATA create + transferChecked for SPL/Token-2022, Memo program.
 
+.cook names are resolved on-chain (cookie_domains PDA) at pay time, so a payment follows the name.
+```
+
+**6/** (222 chars)
+```
+Builder gotcha: wallet-standard maps any unknown RPC to solana:mainnet, so Sprinkle asks the wallet only to sign and broadcasts the raw tx itself to Cookie Chain.
+
+No COOK yet? Bridge from Solana at hyperlane.cookiescan.io
+```
+
+**7/** (128 chars)
+```
 Source (MIT): https://github.com/ys317/sprinkle
-Built for the Cookie Chain bounty on @SuperteamEarn.
+Live: https://sprinkle-ten.vercel.app
+
+Built for the Cookie Chain cApp bounty on @SuperteamEarn 🍪
+```
 
 ## Telegram message
 
-Hey all — built Sprinkle for the cApp bounty: payment links + tip jars + receipts dashboard, fully client-side on Cookie Chain. Live at https://sprinkle-ten.vercel.app, thread here: <X THREAD URL>. Feedback welcome!
+Hey all — built Sprinkle for the cApp bounty: payment links + tip jars + receipts dashboard, fully client-side on Cookie Chain. Live at https://sprinkle-ten.vercel.app, thread here: https://x.com/VongLamqfeg/status/2098370526393913435. Feedback welcome!
