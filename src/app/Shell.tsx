@@ -17,10 +17,10 @@ export function useCookBalance() {
     let alive = true
     const load = () => connection.getBalance(publicKey, 'confirmed').then((v) => alive && setLamports(BigInt(v))).catch(() => {})
     load()
-    const id = connection.onAccountChange(publicKey, (info) => alive && setLamports(BigInt(info.lamports)), 'confirmed')
+    const id = setInterval(load, 10_000)
     return () => {
       alive = false
-      connection.removeAccountChangeListener(id).catch(() => {})
+      clearInterval(id)
     }
   }, [connection, publicKey])
   return lamports
@@ -57,7 +57,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="shell">
       <header className="topbar">
         <Link to="/" className="brand">
-          <span className="brand-mark">🍪</span> Crumbtrail
+          <span className="brand-mark">🍪</span> Sprinkle
         </Link>
         <nav className="nav">
           <NavLink to="/" end>
@@ -71,7 +71,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <footer className="foot">
         <span>Runs entirely in your browser against the Cookie Chain community RPC. No backend, no accounts.</span>
         <span>
-          <a href="https://github.com/ys317/crumbtrail" target="_blank" rel="noreferrer">
+          <a href="https://github.com/ys317/sprinkle" target="_blank" rel="noreferrer">
             Source
           </a>
           {' · '}

@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useWallet } from '@solana/wallet-adapter-react'
+import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import QRCode from 'qrcode'
-import { COOK_MINT, isValidPubkey } from '../lib/chain'
-import { absoluteUrl, encodeRequest } from '../lib/link'
+import { COOK_MINT, shortAddr } from '../lib/chain'
+import { absoluteUrl, encodeRequest, isValidRecipient } from '../lib/link'
+import { RESOLVE_ERROR_TEXT, looksLikeName, resolveRecipient, type ResolveError } from '../lib/names'
 import { fetchTokenRegistry, formatUsd, parseAmount, type TokenInfo } from '../lib/tokens'
 
 export function CreatePage() {
+  const { connection } = useConnection()
   const { publicKey } = useWallet()
   const [to, setTo] = useState('')
   const [touchedTo, setTouchedTo] = useState(false)
+  const [resolved, setResolved] = useState<{ address: string; name: string } | null>(null)
+  const [resolveErr, setResolveErr] = useState<ResolveError | null>(null)
   const [tokens, setTokens] = useState<TokenInfo[]>([])
   const [mint, setMint] = useState(COOK_MINT)
   const [amount, setAmount] = useState('')
@@ -24,8 +28,27 @@ export function CreatePage() {
     if (publicKey && !touchedTo) setTo(publicKey.toBase58())
   }, [publicKey, touchedTo])
 
+  // Resolve .cook names as the user types, so they see where the money will go before sharing.
+  useEffect(() => {
+    setResolved(null)
+    setResolveErr(null)
+    if (!looksLikeName(to) || !isValidRecipient(to)) return
+    let alive = true
+    const id = setTimeout(async () => {
+      const r = await resolveRecipient(connection, to)
+      if (!alive) return
+      if ('error' in r) setResolveErr(r.error)
+      else setResolved({ address: r.pubkey.toBase58(), name: r.name ?? to })
+    }, 350)
+    return () => {
+      alive = false
+      clearTimeout(id)
+    }
+  }, [connection, to])
+
   const token = tokens.find((t) => t.mint === mint) ?? tokens[0]
-  const toValid = isValidPubkey(to)
+  const isName = looksLikeName(to)
+  const toValid = isValidRecipient(to) && (!isName || resolved !== null)
   const amountRaw = amount ? parseAmount(amount, token?.decimals ?? 9) : null
   const amountValid = amount === '' || amountRaw !== null
   const ready = toValid && amountValid && !!token
@@ -56,18 +79,27 @@ export function CreatePage() {
         </p>
 
         <label className="field">
-          <span>Recipient address</span>
+          <span>
+            Recipient <span className="muted">(address or name.cook)</span>
+          </span>
           <input
             value={to}
             onChange={(e) => {
               setTouchedTo(true)
               setTo(e.target.value.trim())
             }}
-            placeholder={publicKey ? publicKey.toBase58() : 'Connect a wallet or paste an address'}
+            placeholder={publicKey ? publicKey.toBase58() : 'Connect a wallet, paste an address, or type alice.cook'}
             spellCheck={false}
-            className={to && !toValid ? 'invalid' : ''}
+            className={to && (!isValidRecipient(to) || resolveErr) ? 'invalid' : ''}
           />
-          {to && !toValid && <small className="err">Not a valid Cookie Chain address.</small>}
+          {to && !isValidRecipient(to) && <small className="err">Not a valid Cookie Chain address or .cook name.</small>}
+          {resolveErr && <small className="err">{RESOLVE_ERROR_TEXT[resolveErr]}</small>}
+          {isName && isValidRecipient(to) && !resolved && !resolveErr && <small className="muted">Resolving {to} on-chain…</small>}
+          {resolved && (
+            <small className="muted">
+              {resolved.name} → <span className="mono">{shortAddr(resolved.address, 6)}</span>
+            </small>
+          )}
         </label>
 
         <div className="row">
@@ -140,11 +172,14 @@ export function CreatePage() {
                 {amount || 'any amount'} {token?.symbol}
               </dd>
               <dt>To</dt>
-              <dd className="mono">{to}</dd>
+              <dd className="mono">
+                {to}
+                {resolved && <span className="muted"> → {resolved.address}</span>}
+              </dd>
               {label && (
                 <>
                   <dt>Memo</dt>
-                  <dd>crumbtrail:v1:{label.replace(/[^ -~]/g, '')}</dd>
+                  <dd>sprinkle:v1:{label.replace(/[^ -~]/g, '')}</dd>
                 </>
               )}
             </dl>

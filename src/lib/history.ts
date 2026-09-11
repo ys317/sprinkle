@@ -1,4 +1,4 @@
-// Reads a wallet's incoming Crumbtrail payments straight from chain history.
+// Reads a wallet's incoming Sprinkle payments straight from chain history.
 // Uses getSignaturesForAddress + getParsedTransactions; no indexer, no backend.
 import { PublicKey, type Connection, type ParsedInstruction, type ParsedTransactionWithMeta } from '@solana/web3.js'
 import { COOK_MINT, MEMO_PREFIX } from './chain'
@@ -13,12 +13,13 @@ export interface IncomingPayment {
   decimals: number
   label: string
   memo: string
-  crumbtrail: boolean
+  sprinkle: boolean
 }
 
 export interface HistoryPage {
   payments: IncomingPayment[]
   scanned: number
+  newestSignature: string | null
   oldestSignature: string | null
   exhausted: boolean
 }
@@ -30,7 +31,7 @@ export async function fetchIncoming(
 ): Promise<HistoryPage> {
   const limit = opts.limit ?? 50
   const sigs = await connection.getSignaturesForAddress(owner, { before: opts.before, limit }, 'confirmed')
-  if (sigs.length === 0) return { payments: [], scanned: 0, oldestSignature: null, exhausted: true }
+  if (sigs.length === 0) return { payments: [], scanned: 0, newestSignature: null, oldestSignature: null, exhausted: true }
 
   const ok = sigs.filter((s) => !s.err)
   const txs = await connection.getParsedTransactions(
@@ -49,6 +50,7 @@ export async function fetchIncoming(
   return {
     payments,
     scanned: sigs.length,
+    newestSignature: sigs[0].signature,
     oldestSignature: sigs[sigs.length - 1].signature,
     exhausted: sigs.length < limit,
   }
@@ -98,12 +100,12 @@ function extractIncoming(tx: ParsedTransactionWithMeta, owner: string): Partial 
   return null
 }
 
-function finish(p: Omit<Partial, 'label' | 'crumbtrail'>): Partial {
-  const crumbtrail = p.memo.startsWith(MEMO_PREFIX)
+function finish(p: Omit<Partial, 'label' | 'sprinkle'>): Partial {
+  const sprinkle = p.memo.startsWith(MEMO_PREFIX)
   let label = ''
-  if (crumbtrail) {
+  if (sprinkle) {
     const rest = p.memo.slice(MEMO_PREFIX.length)
     label = rest.slice(0, rest.lastIndexOf(':') > 0 ? rest.lastIndexOf(':') : rest.length)
   }
-  return { ...p, label, crumbtrail }
+  return { ...p, label, sprinkle }
 }

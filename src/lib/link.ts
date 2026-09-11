@@ -1,17 +1,25 @@
 // A payment request is fully encoded in the URL, so links work with no backend and never expire.
+// `to` may be a base58 address or a `.cook` name; names are resolved on-chain when the link is paid,
+// so a payment follows the name if it is ever transferred.
 import { COOK_MINT, isValidPubkey } from './chain'
+import { isValidLabel, looksLikeName, normalizeName } from './names'
 
 export interface PaymentRequest {
-  to: string // recipient pubkey
+  to: string // recipient pubkey or .cook name
   mint: string // token mint; COOK_MINT for native
   amount?: string // human-readable decimal, optional (tip jar mode when absent)
   label?: string // short label shown to payer and written into the memo
   message?: string // longer description shown to payer only
 }
 
+export function isValidRecipient(s: string): boolean {
+  if (looksLikeName(s)) return isValidLabel(normalizeName(s))
+  return isValidPubkey(s)
+}
+
 export function encodeRequest(r: PaymentRequest): string {
   const p = new URLSearchParams()
-  p.set('to', r.to)
+  p.set('to', looksLikeName(r.to) ? `${normalizeName(r.to)}.cook` : r.to)
   if (r.mint !== COOK_MINT) p.set('mint', r.mint)
   if (r.amount) p.set('amt', r.amount)
   if (r.label) p.set('label', r.label.slice(0, 40))
@@ -23,7 +31,7 @@ export function decodeRequest(search: string): PaymentRequest | { error: string 
   const p = new URLSearchParams(search)
   const to = p.get('to')?.trim() ?? ''
   if (!to) return { error: 'This link has no recipient.' }
-  if (!isValidPubkey(to)) return { error: 'The recipient address in this link is not valid.' }
+  if (!isValidRecipient(to)) return { error: 'The recipient in this link is not a valid address or .cook name.' }
   const mint = p.get('mint')?.trim() || COOK_MINT
   if (!isValidPubkey(mint)) return { error: 'The token mint in this link is not valid.' }
   const amount = p.get('amt')?.trim() || undefined

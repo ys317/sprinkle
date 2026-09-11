@@ -6,6 +6,7 @@ import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID 
 import { useLocation } from 'react-router-dom'
 import { BRIDGE_URL, COOK_MINT, SWAP_URL, explorerAddress, explorerTx, shortAddr } from '../lib/chain'
 import { decodeRequest } from '../lib/link'
+import { RESOLVE_ERROR_TEXT, resolveRecipient, type ResolveError } from '../lib/names'
 import { explainWalletError, sendPayment, type PayStage } from '../lib/pay'
 import { formatAmount, formatUsd, lookupToken, parseAmount, type TokenInfo } from '../lib/tokens'
 
@@ -27,6 +28,8 @@ export function PayPage() {
   const { setVisible } = useWalletModal()
 
   const [token, setToken] = useState<TokenInfo | null | undefined>(undefined)
+  const [recipient, setRecipient] = useState<{ pubkey: PublicKey; name: string | null } | null>(null)
+  const [resolveErr, setResolveErr] = useState<ResolveError | null>(null)
   const [amount, setAmount] = useState('')
   const [balance, setBalance] = useState<bigint | null>(null)
   const [stage, setStage] = useState<PayStage>('idle')
@@ -36,12 +39,29 @@ export function PayPage() {
 
   const mint = 'error' in req ? COOK_MINT : req.mint
   const fixedAmount = 'error' in req ? undefined : req.amount
+  const toInput = 'error' in req ? '' : req.to
 
   useEffect(() => {
     if ('error' in req) return
     setAmount(fixedAmount ?? '')
     lookupToken(mint).then((t) => setToken(t))
   }, [req, mint, fixedAmount])
+
+  // Resolve the recipient (address or .cook name) on-chain at payment time.
+  useEffect(() => {
+    setRecipient(null)
+    setResolveErr(null)
+    if (!toInput) return
+    let alive = true
+    resolveRecipient(connection, toInput).then((r) => {
+      if (!alive) return
+      if ('error' in r) setResolveErr(r.error)
+      else setRecipient(r)
+    })
+    return () => {
+      alive = false
+    }
+  }, [connection, toInput])
 
   // Payer balance for the requested token.
   useEffect(() => {
@@ -102,6 +122,17 @@ export function PayPage() {
       </div>
     )
   }
+  if (resolveErr) {
+    return (
+      <div className="card narrow">
+        <h1>Cannot resolve recipient</h1>
+        <p className="err">
+          <code>{req.to}</code>: {RESOLVE_ERROR_TEXT[resolveErr]}
+        </p>
+      </div>
+    )
+  }
+  if (!recipient) return <div className="card narrow muted">Resolving {req.to} on Cookie Chain…</div>
 
   const raw = parseAmount(amount, token.decimals)
   const usd = raw && token.priceUsd ? (Number(raw) / 10 ** token.decimals) * token.priceUsd : null
@@ -117,7 +148,7 @@ export function PayPage() {
       const res = await sendPayment({
         connection,
         payer: publicKey,
-        recipient: new PublicKey(req.to),
+        recipient: recipient.pubkey,
         mint: token.mint,
         decimals: token.decimals,
         rawAmount: raw,
@@ -136,7 +167,8 @@ export function PayPage() {
     }
   }
 
-  const selfPay = publicKey?.toBase58() === req.to
+  const selfPay = publicKey?.equals(recipient.pubkey) ?? false
+  const recipientAddr = recipient.pubkey.toBase58()
 
   return (
     <div className="card narrow paycard">
@@ -146,8 +178,9 @@ export function PayPage() {
           <h1>{req.label ? req.label : 'Payment request'}</h1>
           <div className="muted">
             to{' '}
-            <a href={explorerAddress(req.to)} target="_blank" rel="noreferrer" className="mono">
-              {shortAddr(req.to, 6)}
+            {recipient.name && <strong>{recipient.name} </strong>}
+            <a href={explorerAddress(recipientAddr)} target="_blank" rel="noreferrer" className="mono">
+              {shortAddr(recipientAddr, 6)}
             </a>
           </div>
         </div>

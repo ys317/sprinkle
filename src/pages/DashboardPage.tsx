@@ -2,8 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { PublicKey } from '@solana/web3.js'
-import { COOK_MINT, explorerAddress, explorerTx, isValidPubkey, shortAddr } from '../lib/chain'
+import { COOK_MINT, explorerAddress, explorerTx, shortAddr } from '../lib/chain'
 import { fetchIncoming, type IncomingPayment } from '../lib/history'
+import { isValidRecipient } from '../lib/link'
+import { RESOLVE_ERROR_TEXT, primaryName, resolveRecipient } from '../lib/names'
 import { fetchTokenRegistry, formatAmount, formatUsd, type TokenInfo } from '../lib/tokens'
 
 export function DashboardPage() {
@@ -13,14 +15,17 @@ export function DashboardPage() {
 
   const [addrInput, setAddrInput] = useState('')
   const [owner, setOwner] = useState<PublicKey | null>(null)
+  const [ownerName, setOwnerName] = useState<string | null>(null)
+  const [resolveMsg, setResolveMsg] = useState('')
   const [payments, setPayments] = useState<IncomingPayment[]>([])
   const [scanned, setScanned] = useState(0)
+  const [newestSig, setNewestSig] = useState<string | null>(null)
   const [cursor, setCursor] = useState<string | null>(null)
   const [exhausted, setExhausted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [tokens, setTokens] = useState<TokenInfo[]>([])
-  const [onlyCrumbtrail, setOnlyCrumbtrail] = useState(true)
+  const [onlySprinkle, setOnlySprinkle] = useState(true)
 
   useEffect(() => {
     fetchTokenRegistry().then(setTokens)
@@ -37,6 +42,7 @@ export function DashboardPage() {
         const page = await fetchIncoming(connection, pk, { before: before ?? undefined, limit: 50 })
         setPayments((prev) => (reset ? page.payments : [...prev, ...page.payments]))
         setScanned((prev) => (reset ? page.scanned : prev + page.scanned))
+        if (reset) setNewestSig(page.newestSignature)
         setCursor(page.oldestSignature)
         setExhausted(page.exhausted)
       } catch (e) {
@@ -52,21 +58,41 @@ export function DashboardPage() {
     if (!owner) return
     setPayments([])
     setScanned(0)
+    setNewestSig(null)
     setCursor(null)
     setExhausted(false)
+    setOwnerName(null)
     load(owner, null, true)
-  }, [owner, load])
+    primaryName(connection, owner).then(setOwnerName).catch(() => {})
+  }, [owner, load, connection])
 
-  // Live updates: re-scan the newest page when the owner's account changes.
+  const onLoadInput = async () => {
+    setResolveMsg('')
+    const r = await resolveRecipient(connection, addrInput)
+    if ('error' in r) setResolveMsg(RESOLVE_ERROR_TEXT[r.error])
+    else setOwner(r.pubkey)
+  }
+
+  // Live updates: poll the address's newest signature every 10s and reload when it changes.
   useEffect(() => {
     if (!owner) return
-    const id = connection.onAccountChange(owner, () => load(owner, null, true), 'confirmed')
-    return () => {
-      connection.removeAccountChangeListener(id).catch(() => {})
+    let alive = true
+    const tick = async () => {
+      try {
+        const [latest] = await connection.getSignaturesForAddress(owner, { limit: 1 }, 'confirmed')
+        if (alive && latest && !latest.err && latest.signature !== newestSig) load(owner, null, true)
+      } catch {
+        /* transient RPC hiccup; try again next tick */
+      }
     }
-  }, [connection, owner, load])
+    const id = setInterval(tick, 10_000)
+    return () => {
+      alive = false
+      clearInterval(id)
+    }
+  }, [connection, owner, load, newestSig])
 
-  const visible = useMemo(() => (onlyCrumbtrail ? payments.filter((p) => p.crumbtrail) : payments), [payments, onlyCrumbtrail])
+  const visible = useMemo(() => (onlySprinkle ? payments.filter((p) => p.sprinkle) : payments), [payments, onlySprinkle])
 
   const totals = useMemo(() => {
     const byMint = new Map<string, { raw: bigint; decimals: number; count: number }>()
@@ -108,20 +134,22 @@ export function DashboardPage() {
       <section className="card">
         <h1>Received payments</h1>
         <p className="lede">
-          Read directly from Cookie Chain history for any address. Payments made through Crumbtrail links carry a memo and are grouped by label.
+          Read directly from Cookie Chain history for any address. Payments made through Sprinkle links carry a memo and are grouped by label.
         </p>
         <div className="row align-end">
           <label className="field grow">
-            <span>Address</span>
+            <span>Address or .cook name</span>
             <input
               value={addrInput}
               onChange={(e) => setAddrInput(e.target.value.trim())}
-              placeholder={owner ? owner.toBase58() : 'Paste an address or connect a wallet'}
+              onKeyDown={(e) => e.key === 'Enter' && isValidRecipient(addrInput) && onLoadInput()}
+              placeholder={owner ? owner.toBase58() : 'Paste an address, type alice.cook, or connect a wallet'}
               spellCheck={false}
-              className={addrInput && !isValidPubkey(addrInput) ? 'invalid' : ''}
+              className={addrInput && !isValidRecipient(addrInput) ? 'invalid' : ''}
             />
+            {resolveMsg && <small className="err">{resolveMsg}</small>}
           </label>
-          <button className="btn btn-primary" disabled={!isValidPubkey(addrInput)} onClick={() => setOwner(new PublicKey(addrInput))}>
+          <button className="btn btn-primary" disabled={!isValidRecipient(addrInput)} onClick={onLoadInput}>
             Load
           </button>
           {!connected && (
@@ -196,12 +224,13 @@ export function DashboardPage() {
             <div className="row space">
               <h2>
                 Incoming to{' '}
+                {ownerName && <strong>{ownerName} </strong>}
                 <a href={explorerAddress(owner.toBase58())} target="_blank" rel="noreferrer" className="mono">
                   {shortAddr(owner.toBase58(), 6)}
                 </a>
               </h2>
               <label className="check">
-                <input type="checkbox" checked={onlyCrumbtrail} onChange={(e) => setOnlyCrumbtrail(e.target.checked)} /> Crumbtrail payments only
+                <input type="checkbox" checked={onlySprinkle} onChange={(e) => setOnlySprinkle(e.target.checked)} /> Sprinkle payments only
               </label>
             </div>
             {error && <p className="err">{error}</p>}
@@ -232,7 +261,7 @@ export function DashboardPage() {
                           <td className="nowrap">
                             {formatAmount(p.rawAmount, p.decimals)} {t?.symbol ?? (p.mint === COOK_MINT ? 'COOK' : shortAddr(p.mint))}
                           </td>
-                          <td>{p.crumbtrail ? p.label || <span className="muted">tip</span> : <span className="muted">{p.memo || '—'}</span>}</td>
+                          <td>{p.sprinkle ? p.label || <span className="muted">tip</span> : <span className="muted">{p.memo || '—'}</span>}</td>
                           <td className="mono">
                             <a href={explorerTx(p.signature)} target="_blank" rel="noreferrer">
                               {shortAddr(p.signature, 5)}

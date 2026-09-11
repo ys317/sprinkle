@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="g" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#e5a15a"/>
+      <stop offset="1" stop-color="#b8631f"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#fff3e0"/>
+  <circle cx="256" cy="268" r="176" fill="url(#g)"/>
+  <circle cx="256" cy="268" r="176" fill="none" stroke="#8a4a14" stroke-width="10" opacity=".35"/>
+  <!-- sprinkles -->
+  <g stroke-linecap="round" stroke-width="22">
+    <line x1="170" y1="200" x2="215" y2="180" stroke="#e63946"/>
+    <line x1="300" y1="170" x2="345" y2="195" stroke="#2a9d8f"/>
+    <line x1="200" y1="300" x2="240" y2="335" stroke="#f4d35e"/>
+    <line x1="290" y1="320" x2="335" y2="300" stroke="#4361ee"/>
+    <line x1="150" y1="270" x2="180" y2="305" stroke="#ff7ab6"/>
+    <line x1="330" y1="240" x2="365" y2="265" stroke="#fdf0d5"/>
+    <line x1="245" y1="220" x2="270" y2="260" stroke="#7bdff2"/>
+  </g>
+  <!-- falling sprinkles above -->
+  <g stroke-linecap="round" stroke-width="18" opacity=".95">
+    <line x1="120" y1="80" x2="150" y2="70" stroke="#e63946"/>
+    <line x1="230" y1="60" x2="262" y2="70" stroke="#4361ee"/>
+    <line x1="350" y1="80" x2="380" y2="95" stroke="#2a9d8f"/>
+  </g>
+</svg>

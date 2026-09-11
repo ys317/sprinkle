@@ -3,7 +3,9 @@
 import { Connection, PublicKey } from '@solana/web3.js'
 
 export const RPC_URL = 'https://rpc.cookiescan.io'
-export const WS_URL = 'wss://wss.cookiescan.io'
+// The documented WS endpoint (wss.cookiescan.io) currently serves a certificate for a different
+// hostname, so browsers refuse it. Nothing in the app subscribes over WS: confirmation and live
+// updates are polled over HTTP instead.
 export const EXPLORER_URL = 'https://cookiescan.io'
 export const COOKIESCAN_API = 'https://api.cookiescan.io'
 export const BRIDGE_URL = 'https://hyperlane.cookiescan.io'
@@ -16,16 +18,15 @@ export const COOK_SYMBOL = 'COOK'
 
 export const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr')
 
-// Every Crumbtrail payment carries a memo with this prefix so the dashboard can find its own trail.
-export const MEMO_PREFIX = 'crumbtrail:v1:'
+// Every Sprinkle payment carries a memo with this prefix so the dashboard can find its own trail.
+export const MEMO_PREFIX = 'sprinkle:v1:'
 
 let _connection: Connection | null = null
 export function getConnection(): Connection {
   if (!_connection) {
     _connection = new Connection(RPC_URL, {
       commitment: 'confirmed',
-      wsEndpoint: WS_URL,
-      confirmTransactionInitialTimeout: 60_000,
+      disableRetryOnRateLimit: false,
     })
   }
   return _connection
