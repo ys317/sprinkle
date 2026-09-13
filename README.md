@@ -32,6 +32,15 @@ flow is deterministic no matter which network the wallet UI has selected.
 - Explorer links: https://cookiescan.io
 - Bridge hint for empty wallets: https://hyperlane.cookiescan.io
 
+## Security model
+
+- **Nothing to approve, nothing to revoke.** A Sprinkle payment is a plain transfer. The app never asks for token delegates, program approvals, session keys or message signatures, so there is no standing permission a malicious link could exploit later.
+- **You see the exact instructions before signing.** Every transaction is simulated against the Cookie Chain RPC first; simulation errors are turned into readable text and the wallet is never opened for a transaction that would fail.
+- **Links cannot lie about where money goes.** The recipient is in the URL and shown on the pay page; `.cook` names are resolved from the on-chain registry at payment time, and names held by the marketplace escrow are refused instead of paid into a program account.
+- **No backend, no custody, no accounts.** The site is static; the browser talks only to `rpc.cookiescan.io` and `api.cookiescan.io`. Nothing is stored server-side, so there is nothing to breach and nothing to phish out of a database.
+- **Bounded inputs.** Labels are capped at 40 characters and stripped to printable ASCII before they go into the memo; messages are capped at 200 characters and never written on-chain.
+- **Broadcast is explicit.** The wallet only signs; the page sends the raw transaction to the Cookie Chain RPC itself, so a wallet UI left on another network cannot route the transaction elsewhere.
+
 ## Run locally
 
 ```bash
