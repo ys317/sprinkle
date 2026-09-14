@@ -5,6 +5,8 @@ No backend, no accounts, no custody. Everything runs in the browser against the 
 
 Live: https://sprinkle-ten.vercel.app
 
+![Sprinkle walkthrough: create a link, pay it with Nightly, see receipts](docs/demo.gif)
+
 ## What it does
 
 | Page | What happens on-chain |
