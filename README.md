@@ -20,7 +20,7 @@ Live: https://sprinkle-ten.vercel.app
 
 If the payer does not hold enough of the requested token, the pay page offers to swap into it first through the **Candy Shop aggregator** (`swap.cookiescan.io`, routing across Cookieswap / Cookiebox liquidity). Sprinkle lists what the wallet does hold, finds the smallest input whose *guaranteed* output (after slippage) covers the shortfall, shows the route, aggregator fee and price impact, and then runs two wallet prompts: the swap, then the normal Sprinkle transfer with its memo. The aggregator only builds the swap transaction; the wallet signs it and the browser broadcasts it to the Cookie Chain RPC, exactly like a payment.
 
-The aggregator sends no CORS headers, so a tiny same-origin function (`api/candyshop/[...path].ts`, deployed by Vercel) forwards an allow-list of its endpoints. It holds no keys and stores nothing.
+The aggregator sends no CORS headers, so `vercel.json` rewrites `/api/candyshop/*` to `https://swap.cookiescan.io/api/*` at the edge. It is a plain reverse proxy: no code, no keys, nothing stored. In `vite dev` the same path is proxied by the dev server.
 
 ## `.cook` names
 
@@ -37,7 +37,7 @@ flow is deterministic no matter which network the wallet UI has selected.
 
 - RPC: `https://rpc.cookiescan.io` (HTTP only — the documented WS endpoint currently serves a mismatched TLS certificate, so confirmation and live updates are polled)
 - Token registry + prices: `https://api.cookiescan.io/api/tokens`, `/api/price/cook`
-- Swaps: Candy Shop aggregator `https://swap.cookiescan.io/api` (quote → build tx → sign in wallet → broadcast), via the same-origin proxy in `api/`
+- Swaps: Candy Shop aggregator `https://swap.cookiescan.io/api` (quote → build tx → sign in wallet → broadcast), via the edge rewrite in `vercel.json`
 - Programs used: System, SPL Token, Token‑2022, Associated Token Account, Memo, Compute Budget, `cookie_domains` (`.cook` names, read-only), plus whatever DEX programs the aggregator routes through (Cookieswap CPAMM, Cookiebox DAMM/CLMM)
 - Explorer links: https://cookiescan.io
 - Bridge hint for empty wallets: https://hyperlane.cookiescan.io
@@ -59,7 +59,7 @@ npm run dev        # http://localhost:5173
 npm run build      # static output in dist/
 ```
 
-Deploys as a static site plus one serverless function (`api/candyshop/[...path].ts`, the aggregator proxy). `vercel.json` rewrites every non-`/api` route to `index.html`.
+Deploys as a static site. `vercel.json` proxies `/api/candyshop/*` to the aggregator and rewrites every other route to `index.html`.
 
 ## Stack
 

@@ -1,4 +1,5 @@
-// Candy Shop swap aggregator (swap.cookiescan.io) through our same-origin proxy (/api/candyshop).
+// Candy Shop swap aggregator (swap.cookiescan.io) through our same-origin path (/api/candyshop),
+// which vercel.json rewrites to the aggregator at the edge (and vite.config.ts proxies in dev).
 // Used for "pay with another token": the payer swaps into the requested token first, then the normal
 // Sprinkle transfer runs. The aggregator only builds the transaction; the wallet signs it and we
 // broadcast it to the Cookie Chain RPC ourselves.

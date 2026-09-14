@@ -21,7 +21,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // Mirrors api/candyshop/[...path].ts in production so the swap flow works in `vite dev`.
+      // Mirrors the /api/candyshop rewrite in vercel.json so the swap flow works in `vite dev`.
       '/api/candyshop': {
         target: 'https://swap.cookiescan.io',
         changeOrigin: true,
