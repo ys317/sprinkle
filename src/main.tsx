@@ -7,6 +7,7 @@ import { Shell } from './app/Shell'
 import { CreatePage } from './pages/CreatePage'
 import { PayPage } from './pages/PayPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { ReceiptPage } from './pages/ReceiptPage'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
@@ -18,6 +19,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/" element={<CreatePage />} />
             <Route path="/pay" element={<PayPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/tx/:sig" element={<ReceiptPage />} />
             <Route path="*" element={<CreatePage />} />
           </Routes>
         </Shell>

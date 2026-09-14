@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { PublicKey } from '@solana/web3.js'
+import { Link } from 'react-router-dom'
 import { COOK_MINT, explorerAddress, explorerTx, shortAddr } from '../lib/chain'
 import { fetchIncoming, type IncomingPayment } from '../lib/history'
 import { isValidRecipient } from '../lib/link'
@@ -262,9 +263,12 @@ export function DashboardPage() {
                             {formatAmount(p.rawAmount, p.decimals)} {t?.symbol ?? (p.mint === COOK_MINT ? 'COOK' : shortAddr(p.mint))}
                           </td>
                           <td>{p.sprinkle ? p.label || <span className="muted">tip</span> : <span className="muted">{p.memo || '—'}</span>}</td>
-                          <td className="mono">
-                            <a href={explorerTx(p.signature)} target="_blank" rel="noreferrer">
+                          <td className="mono nowrap">
+                            <Link to={`/tx/${p.signature}`} title="Open receipt">
                               {shortAddr(p.signature, 5)}
+                            </Link>{' '}
+                            <a href={explorerTx(p.signature)} target="_blank" rel="noreferrer" title="View on Cookiescan" className="muted">
+                              ↗
                             </a>
                           </td>
                         </tr>

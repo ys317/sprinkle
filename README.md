@@ -14,6 +14,13 @@ Live: https://sprinkle-ten.vercel.app
 | **Create link** (`/`) | Nothing yet. You pick recipient, token (COOK or any registry token), optional amount, label and message. The whole request is encoded in the URL, plus a QR code. Links never expire. |
 | **Pay** (`/pay?…`) | Payer connects [Nightly](https://nightly.app), sees their balance, and sends. For COOK that is a `SystemProgram.transfer`; for SPL / Token‑2022 it is an idempotent ATA create + `transferChecked`. Every payment carries a `sprinkle:v1:<label>:<payer>` memo. The transaction is simulated first, signed by the wallet, broadcast by the page to `rpc.cookiescan.io`, and confirmed with live stage updates and an explorer link. |
 | **Received** (`/dashboard`) | Reads `getSignaturesForAddress` + `getParsedTransactions` for any address or `.cook` name, extracts incoming COOK and token transfers, groups Sprinkle payments by label, shows totals (USD via Cookiescan prices), a per‑day chart and a table. Polls the newest signature every 10 s so new payments appear as they land. |
+| **Receipt** (`/tx/<signature>`) | A shareable, self-verifying receipt. Opening it re-reads the transaction from the RPC: amount, token, from → to (with `.cook` primary names), label, time, slot, fee, status. Nothing is stored by Sprinkle, so a receipt cannot be edited after the fact. Linked from every successful payment and every dashboard row. |
+
+## Pay with another token
+
+If the payer does not hold enough of the requested token, the pay page offers to swap into it first through the **Candy Shop aggregator** (`swap.cookiescan.io`, routing across Cookieswap / Cookiebox liquidity). Sprinkle lists what the wallet does hold, finds the smallest input whose *guaranteed* output (after slippage) covers the shortfall, shows the route, aggregator fee and price impact, and then runs two wallet prompts: the swap, then the normal Sprinkle transfer with its memo. The aggregator only builds the swap transaction; the wallet signs it and the browser broadcasts it to the Cookie Chain RPC, exactly like a payment.
+
+The aggregator sends no CORS headers, so a tiny same-origin function (`api/candyshop/[...path].ts`, deployed by Vercel) forwards an allow-list of its endpoints. It holds no keys and stores nothing.
 
 ## `.cook` names
 
@@ -30,7 +37,8 @@ flow is deterministic no matter which network the wallet UI has selected.
 
 - RPC: `https://rpc.cookiescan.io` (HTTP only — the documented WS endpoint currently serves a mismatched TLS certificate, so confirmation and live updates are polled)
 - Token registry + prices: `https://api.cookiescan.io/api/tokens`, `/api/price/cook`
-- Programs used: System, SPL Token, Token‑2022, Associated Token Account, Memo, Compute Budget, `cookie_domains` (`.cook` names, read-only)
+- Swaps: Candy Shop aggregator `https://swap.cookiescan.io/api` (quote → build tx → sign in wallet → broadcast), via the same-origin proxy in `api/`
+- Programs used: System, SPL Token, Token‑2022, Associated Token Account, Memo, Compute Budget, `cookie_domains` (`.cook` names, read-only), plus whatever DEX programs the aggregator routes through (Cookieswap CPAMM, Cookiebox DAMM/CLMM)
 - Explorer links: https://cookiescan.io
 - Bridge hint for empty wallets: https://hyperlane.cookiescan.io
 
@@ -51,7 +59,7 @@ npm run dev        # http://localhost:5173
 npm run build      # static output in dist/
 ```
 
-Deploys as a static site. `vercel.json` rewrites all routes to `index.html`.
+Deploys as a static site plus one serverless function (`api/candyshop/[...path].ts`, the aggregator proxy). `vercel.json` rewrites every non-`/api` route to `index.html`.
 
 ## Stack
 

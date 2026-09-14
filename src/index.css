@@ -115,6 +115,21 @@ table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); }
 th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
 
+/* swap-to-pay panel */
+.swap-panel { margin-top: 1rem; padding: 0.9rem 1rem; border: 1px dashed var(--line); border-radius: 10px; background: var(--bg); display: flex; flex-direction: column; gap: 0.5rem; }
+.swap-head { display: flex; flex-direction: column; gap: 0.15rem; }
+.swap-panel .field { margin-bottom: 0; }
+
+/* receipt */
+.receipt .stamp { display: inline-block; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.25rem 0.7rem; border-radius: 999px; margin-bottom: 0.8rem; }
+.receipt .stamp.ok { background: color-mix(in srgb, var(--ok) 14%, transparent); color: var(--ok); border: 1px solid var(--ok); }
+.receipt .stamp.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); border: 1px solid var(--bad); }
+.amount-big { font-size: 2.2rem; font-weight: 700; line-height: 1.1; }
+.amount-big .sym { font-size: 1.1rem; color: var(--muted); font-weight: 600; }
+.receipt-grid { margin-top: 1rem; }
+.break { word-break: break-all; }
+.receipt details ul { padding-left: 1rem; margin: 0.4rem 0 0; }
+
 /* wallet-adapter modal theming */
 .wallet-adapter-modal-wrapper { background: var(--card) !important; color: var(--ink) !important; }
 .wallet-adapter-button { font-family: inherit !important; }

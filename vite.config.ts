@@ -19,4 +19,15 @@ export default defineConfig({
   build: {
     target: 'es2022',
   },
+  server: {
+    proxy: {
+      // Mirrors api/candyshop/[...path].ts in production so the swap flow works in `vite dev`.
+      '/api/candyshop': {
+        target: 'https://swap.cookiescan.io',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/candyshop/, '/api'),
+        headers: { 'user-agent': 'sprinkle-dev/1.0' },
+      },
+    },
+  },
 })

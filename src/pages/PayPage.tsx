@@ -3,7 +3,8 @@ import { useConnection, useWallet } from '@solana/wallet-adapter-react'
 import { useWalletModal } from '@solana/wallet-adapter-react-ui'
 import { PublicKey } from '@solana/web3.js'
 import { getAssociatedTokenAddressSync, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from '@solana/spl-token'
-import { useLocation } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
+import { SwapToPay } from '../components/SwapToPay'
 import { BRIDGE_URL, COOK_MINT, SWAP_URL, explorerAddress, explorerTx, shortAddr } from '../lib/chain'
 import { decodeRequest } from '../lib/link'
 import { RESOLVE_ERROR_TEXT, resolveRecipient, type ResolveError } from '../lib/names'
@@ -36,6 +37,8 @@ export function PayPage() {
   const [sig, setSig] = useState<string>('')
   const [error, setError] = useState<string>('')
   const [seconds, setSeconds] = useState<number | null>(null)
+  const [refreshTick, setRefreshTick] = useState(0)
+  const [copied, setCopied] = useState(false)
 
   const mint = 'error' in req ? COOK_MINT : req.mint
   const fixedAmount = 'error' in req ? undefined : req.amount
@@ -91,7 +94,7 @@ export function PayPage() {
     return () => {
       alive = false
     }
-  }, [connection, publicKey, token, stage])
+  }, [connection, publicKey, token, stage, refreshTick])
 
   useEffect(() => {
     if (stage !== 'sending' && stage !== 'confirming') {
@@ -237,9 +240,22 @@ export function PayPage() {
           <a href={explorerTx(sig)} target="_blank" rel="noreferrer" className="mono">
             {shortAddr(sig, 10)}
           </a>
-          <button className="btn btn-ghost btn-sm" onClick={() => { setStage('idle'); setSig(''); if (!fixedAmount) setAmount('') }}>
-            Pay again
-          </button>
+          <div className="actions">
+            <Link className="btn btn-primary btn-sm" to={`/tx/${sig}`}>
+              Open receipt
+            </Link>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() =>
+                navigator.clipboard.writeText(`${window.location.origin}/tx/${sig}`).then(() => (setCopied(true), setTimeout(() => setCopied(false), 1500)))
+              }
+            >
+              {copied ? 'Copied!' : 'Copy receipt link'}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={() => { setStage('idle'); setSig(''); if (!fixedAmount) setAmount('') }}>
+              Pay again
+            </button>
+          </div>
         </div>
       )}
       {stage === 'failed' && (
@@ -257,6 +273,18 @@ export function PayPage() {
             Try again
           </button>
         </div>
+      )}
+
+      {connected && publicKey && signTransaction && raw !== null && balance !== null && raw > balance && !busy && stage !== 'confirmed' && (
+        <SwapToPay
+          key={`${token.mint}:${raw.toString()}:${refreshTick}`}
+          connection={connection}
+          payer={publicKey}
+          target={token}
+          shortfallRaw={raw - balance + (token.mint === COOK_MINT ? 10_000_000n : 0n)}
+          signTransaction={signTransaction}
+          onSwapped={() => setRefreshTick((n) => n + 1)}
+        />
       )}
 
       {connected && balance === 0n && (
