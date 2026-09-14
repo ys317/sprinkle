@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/candyshop/:path*", "destination": "https://swap.cookiescan.io/api/:path*" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
 }
